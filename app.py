@@ -1,49 +1,42 @@
-import os
+import streamlit as st
+import numpy as np
 import tensorflow as tf
-from flask import Flask, render_template, request, jsonify
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-import numpy as np
 import pickle
-
-app = Flask(__name__)
 
 # Load tokenizer
 with open('tokenizer.pkl', 'rb') as f:
     tokenizer = pickle.load(f)
 
-max_len = 100  # consistent with training
-
-# Pre-load both models for performance (or load on demand)
+# Load models
 MODELS = {
-    'cnn': load_model('sentiment_analysis_cnn.keras'),
-    'lstm': load_model('sentiment_analysis_lstm.keras')
+    'CNN': load_model('sentiment_analysis_cnn.keras'),
+    'LSTM': load_model('sentiment_analysis_lstm.keras')
 }
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+max_len = 100  # Must match training
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    text = request.form['text']
-    model_choice = request.form['model']
+# Streamlit UI
+st.set_page_config(page_title="Sentiment Analysis", layout="centered")
+st.title("Sentiment Analysis App")
+st.write("Choose a model and enter some text to analyze the sentiment.")
 
-    if model_choice not in MODELS:
-        return jsonify({'error': 'Invalid model choice'}), 400
+# User input
+text_input = st.text_area("Enter text", height=150)
+model_choice = st.selectbox("Select Model", list(MODELS.keys()))
 
-    model = MODELS[model_choice]
+if st.button("Analyze Sentiment"):
+    if not text_input.strip():
+        st.warning("Please enter some text.")
+    else:
+        model = MODELS[model_choice]
+        sequence = tokenizer.texts_to_sequences([text_input])
+        padded = pad_sequences(sequence, maxlen=max_len)
+        probability = float(model.predict(padded)[0][0])
+        label = "Positive" if probability >= 0.5 else "Negative"
 
-    sequence = tokenizer.texts_to_sequences([text])
-    padded = pad_sequences(sequence, maxlen=max_len)
-    probability = float(model.predict(padded)[0][0])
-    label = 'Positive' if probability >= 0.5 else 'Negative'
-
-    return jsonify({
-        'label': label,
-        'probability': round(probability * 100, 2),
-        'model': model_choice.upper()
-    })
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        st.subheader("Result")
+        st.write(f"**Sentiment:** {label}")
+        st.write(f"**Confidence:** {round(probability * 100, 2)}%")
+        st.write(f"**Model Used:** {model_choice}")
