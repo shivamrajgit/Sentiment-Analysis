@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentiment Analysis</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h2>Sentiment Analyzer</h2>
+    <form id="sentimentForm">
+      <label for="text">Enter your text:</label>
+      <input type="text" id="text" name="text" required>
+
+      <label for="model">Select model:</label>
+      <select id="model" name="model">
+        <option value="cnn">CNN</option>
+        <option value="lstm">LSTM</option>
+      </select>
+
+      <button type="submit">Analyze</button>
+    </form>
+
+    <div class="result" id="result"></div>
+    <div class="examples">
+        <h3>Examples to try:</h3>
+        <ul>
+          <li>“I love this product, it's amazing!”</li>
+          <li>“This was the worst experience ever.”</li>
+          <li>“The movie could've been better.”</li>
+          <li>“Absolutely fantastic service!”</li>
+          <li>“I hate it when things go wrong.”</li>
+        </ul>
+      </div>
+      <div class="footer">
+        <p>🔗 View the code on 
+          <a href="https://github.com/shivamrajgit/Sentiment-Analysis" target="_blank">GitHub</a>
+        </p>
+      </div>      
+  </div>
+
+  <script>
+    const form = document.getElementById('sentimentForm');
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const response = await fetch('/predict', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+      const resultDiv = document.getElementById('result');
+
+      if (result.error) {
+        resultDiv.innerHTML = `<span style="color:red;">${result.error}</span>`;
+      } else {
+        const sentimentClass = result.label === 'Positive' ? 'positive' : 'negative';
+        resultDiv.innerHTML = `
+          Model: <strong>${result.model}</strong><br>
+          Sentiment: <span class="${sentimentClass}">${result.label}</span><br>
+          Confidence: ${result.probability}%`;
+      }
+    });
+  </script>
+</body>
+</html>
