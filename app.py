@@ -1,10 +1,5 @@
 import os
 import tensorflow as tf
-
-# Disable GPU if not available
-if not tf.config.list_physical_devices('GPU'):
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
 from flask import Flask, render_template, request, jsonify
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
